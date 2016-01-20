@@ -1,40 +1,38 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse , JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.core.exceptions import SuspiciousOperation
-from django.contrib.auth import login as auth_login , logout as auth_logout
+from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.tokens import default_token_generator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods , require_GET , require_POST
-from .forms import LoginForm, SignupForm, ForgotPasswordForm, SetPasswordForm , ProfileForm
+from django.views.decorators.http import require_http_methods, require_GET, require_POST
+from django.contrib.auth.decorators import login_required
 from django.core.mail import EmailMultiAlternatives
 from django.contrib.sites.shortcuts import get_current_site
 from django.conf import settings
 from django.template import loader
 from django.utils.encoding import force_bytes, force_text
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.contrib.auth.decorators import login_required
+from .forms import LoginForm, SignupForm, ForgotPasswordForm, SetPasswordForm, ProfileForm
 from .models import CustomUser
+from question.models import Question
+
 # Create your views here.
-
-@require_http_methods(['GET' , 'POST'])
+@require_http_methods(['GET', 'POST'])
 def base(request):
-	
-	if request.user.is_authenticated():
-		return redirect('home')
-
-	if request.method == 'GET':
-		f = LoginForm()
-		
-	else:
-		f = LoginForm(request.POST)
-		if f.is_valid():
-			user = f.get_user()
-			auth_login(request , user)
-			return redirect('home')
-			
-	return render(request , 'authentication/login.html' , {'form' : f})
-
-
+    if request.user.is_authenticated():
+        return redirect('home')
+    if request.method == 'GET':
+        f = LoginForm();
+    else:
+        f = LoginForm(request.POST)
+        if f.is_valid():
+            user = f.get_user();
+            auth_login(request, user)
+            return JsonResponse(data = {'success': True });
+        else:
+            data = { 'error' : True, 'errors' : dict(f.errors.items())};
+            return JsonResponse(status = 400, data = data);
+    return render(request, 'authentication/login.html', { 'form': f})
 
 @require_http_methods(['GET', 'POST'])
 def signup(request):
@@ -59,18 +57,17 @@ def signup(request):
             return render(request, 'authentication/signup_email_sent.html', { 'email' : user.email })
     return render(request, 'authentication/signup.html', { 'form': f})
 
-
 @require_GET
 def logout(request):
-	auth_logout(request)
-	return redirect('base')
-	
-
+    auth_logout(request)
+    return redirect('base');
 
 @require_GET
 @login_required
 def home(request):
-	return render(request , 'base/loggedin.html')
+    recent_ten_ques = Question.objects.all().order_by('-created_at')[:10];
+    context = { 'ques' : recent_ten_ques };
+    return render(request, 'base/loggedin.html', context);
 
 
 @require_GET
@@ -119,7 +116,7 @@ def forgot_password(request):
             return render(request, 'authentication/forgot_password_email_sent.html',context)
     context = {'form' : f}
     return render(request, 'authentication/forgot_password.html', context)
-    
+
 @require_http_methods(['GET', 'POST'])
 def reset_password(request, uid = None, token=None):
     if request.user.is_authenticated():
@@ -156,4 +153,3 @@ def edit_profile(request):
             context['save_success'] = True
     context['form'] = f
     return render(request, 'authentication/profile.html', context)
-

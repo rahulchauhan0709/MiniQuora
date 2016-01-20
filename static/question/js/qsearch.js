@@ -1,6 +1,5 @@
 QSearch = (function() {
     var el;
-    
     function updateResults(questions){
         if(questions.length === 0) {
             $('.collection-header').html('No Results!');
@@ -14,26 +13,23 @@ QSearch = (function() {
             $('.collection').append(el);
         }
     }
-	function search(){
-		var term = $(this).val();
-		$.ajax({
-			url : '/question/search/',
-			data : {'q' : term},
-			type : 'GET',
-			success : function(data , status , xhr){
-				console.log(data);
-				updateResults(data['questions']);
-			}
-		
-		});
-	}
-	
-	function init(id){
-		el = $('#' + id);
-		el.on('input' , search); 
-	}
-	
-	return {
-		init : init
-	};
+    function search() {
+        var term = $(this).val();
+        $.ajax({
+            url: '/question/search/',
+            data: { 'q' : term},
+            type: 'GET',
+            success: function(data, status, xhr){
+                console.log(data);
+                updateResults(data['questions']);
+            }
+        });
+    }
+    function init(id) {
+        el = $('#'+id);
+        el.on('input', search);
+    }
+    return {
+        init : init
+    };
 })();
